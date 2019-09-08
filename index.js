@@ -41,6 +41,7 @@ const startingTime = _.reduce(_.map(backtestAssets, 'startTime'),
     }
     return item;
   });
+
 const endingTime = _.reduce(_.map(backtestAssets, 'endTime'),
   function (latestTime, item) {
     if (latestTime < item) {
@@ -49,12 +50,46 @@ const endingTime = _.reduce(_.map(backtestAssets, 'endTime'),
     return item;
   });
 
+const getAllocationFromFiat = function (initialPortfolio, fiatAllocation) {
+  const [fiatPortfolio, portfolioWitoutFiat ] = _.partition(initialPortfolio, {'symbol': 'USD'});
+  const extraFiatAllocation = fiatAllocation - fiatPortfolio[0].percent;
+  const cryptoTotal = _.reduce(
+    _.map(portfolioWitoutFiat, 'percent'),
+    function(sum, assetPercent) {
+      return sum + assetPercent;
+    });
+  console.log(cryptoTotal);
+
+  return _.map(initialPortfolio, function (item) {
+    if(item.symbol === 'USD') {
+      return {
+        symbol: item.symbol,
+        percent: fiatAllocation
+      };
+    } else {
+      return {
+        symbol: item.symbol,
+        percent: item.percent * (cryptoTotal / 100 ) * (100 - extraFiatAllocation) / 100
+      };
+    }
+  });
+}
+
+const newAlloc = getAllocationFromFiat(portfolio, 50);
+console.log(newAlloc);
+console.log(_.reduce(_.map(newAlloc, 'percent'), function (sum, item) {
+  return sum + item;
+}));
+process.exit(1);
+
 for(i = 0; i <= 25; i+=5) {
   for(j = 0; j <= 45; j+=5) {
     backtestSettings = {
       exchange,
       rebalancePeriod,
       fee,
+      startingTime,
+      endingTime,
       startingCapital,
     };
     //console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
