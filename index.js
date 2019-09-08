@@ -26,21 +26,40 @@ const fee = 0.15;
 
 const backtestAssetsAll = client.getBacktestAssets(exchange);
 const backtestAssets = backtestAssetsAll.filter(function (item) {
-  return !_.isUndefined(_.find(portfolio, { 'name': item.symbol}));
+  return !_.isUndefined(_.find(portfolio, { 'symbol': item.symbol}));
 });
-
-const backtestSettings = {
-    exchange,
-    rebalancePeriod,
-    
-}
 
 let counter = 0;
 let fiatAllocation = 0;
 let rebalancePeriod = 1;
+let backtestSettings;
+
+const startingTime = _.reduce(_.map(backtestAssets, 'startTime'),
+  function (earliestTime, item) {
+    if (earliestTime > item) {
+      return item;
+    }
+    return item;
+  });
+const endingTime = _.reduce(_.map(backtestAssets, 'endTime'),
+  function (latestTime, item) {
+    if (latestTime < item) {
+      return item;
+    }
+    return item;
+  });
+
 for(i = 0; i <= 25; i+=5) {
   for(j = 0; j <= 45; j+=5) {
-    console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
+    backtestSettings = {
+      exchange,
+      rebalancePeriod,
+      fee,
+      startingCapital,
+    };
+    //console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
+    console.log(backtestSettings);
+    process.exit(1);
     counter++;
   }
 }
