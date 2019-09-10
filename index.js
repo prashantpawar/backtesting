@@ -36,7 +36,6 @@ async function init() {
   const backtestAssets = _.filter(backtestAssetsAll, function(item) {
     return !_.isUndefined(_.find(portfolio, {symbol: item.symbol}));
   });
-  console.log(backtestAssets);
 
   let counter = 0;
   let fiatAllocation = 0;
@@ -63,20 +62,17 @@ async function init() {
     return earliestEndTime;
   });
 
-  console.log(startingTime);
-  console.log(endingTime);
-  /**
   const getAllocationFromFiat = function(initialPortfolio, fiatAllocation) {
     const [fiatPortfolio, portfolioWitoutFiat] = _.partition(initialPortfolio, {
       symbol: 'USD',
     });
     const extraFiatAllocation = fiatAllocation - fiatPortfolio[0].percent;
-    const cryptoTotal = _.reduce(_.map(portfolioWitoutFiat, 'percent'), function(
-      sum,
-      assetPercent,
-    ) {
-      return sum + assetPercent;
-    });
+    const cryptoTotal = _.reduce(
+      _.map(portfolioWitoutFiat, 'percent'),
+      function(sum, assetPercent) {
+        return sum + assetPercent;
+      },
+    );
 
     return _.map(initialPortfolio, function(item) {
       if (item.symbol === 'USD') {
@@ -88,21 +84,20 @@ async function init() {
         return {
           symbol: item.symbol,
           percent:
-            (item.percent * (cryptoTotal / 100) * (100 - extraFiatAllocation)) /
-            100,
+            (item.percent * (cryptoTotal - extraFiatAllocation)) / cryptoTotal,
         };
       }
     });
   };
 
-  const newAlloc = getAllocationFromFiat(portfolio, 50);
+  const newAlloc = getAllocationFromFiat(portfolio, 5);
   console.log(newAlloc);
   console.log(
     _.reduce(_.map(newAlloc, 'percent'), function(sum, item) {
       return sum + item;
     }),
   );
-  process.exit(1);
+  /**
 
   for (i = 0; i <= 25; i += 5) {
     for (j = 0; j <= 45; j += 5) {
