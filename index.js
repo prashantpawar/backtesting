@@ -1,102 +1,127 @@
-const client = require('./client').client;
 const _ = require('lodash');
 
-const portfolio = [
-  {
-    symbol: 'XTZ',
-    percent: 46.50,
-  },
-  {
-    symbol: 'ETH',
-    percent: 44.30,
-  },
-  {
-    symbol: 'BTC',
-    percent: 5.03,
-  },
-  {
-    symbol: 'USD',
-    percent: 4.17,
-  },
-];
+require('dotenv').config();
 
-const exchange = 'kraken';
-const startingCapital = 500000;
-const fee = 0.15;
+async function init() {
+  const Shrimpy = require('shrimpy-node');
+  const client = new Shrimpy.ShrimpyApiClient(
+    process.env.SHRIMPY_PUBLIC_KEY,
+    process.env.SHRIMPY_PRIVATE_KEY,
+  );
 
-const backtestAssetsAll = client.getBacktestAssets(exchange);
-const backtestAssets = backtestAssetsAll.filter(function (item) {
-  return !_.isUndefined(_.find(portfolio, { 'symbol': item.symbol}));
-});
+  const portfolio = [
+    {
+      symbol: 'XTZ',
+      percent: 46.5,
+    },
+    {
+      symbol: 'ETH',
+      percent: 44.3,
+    },
+    {
+      symbol: 'XBT',
+      percent: 5.03,
+    },
+    {
+      symbol: 'USD',
+      percent: 4.17,
+    },
+  ];
 
-let counter = 0;
-let fiatAllocation = 0;
-let rebalancePeriod = 1;
-let backtestSettings;
+  const exchange = 'kraken';
+  const startingCapital = 500000;
+  const fee = 0.15;
 
-const startingTime = _.reduce(_.map(backtestAssets, 'startTime'),
-  function (earliestTime, item) {
-    if (earliestTime > item) {
-      return item;
+  const backtestAssetsAll = await client.getBacktestAssets(exchange);
+  const backtestAssets = _.filter(backtestAssetsAll, function(item) {
+    return !_.isUndefined(_.find(portfolio, {symbol: item.symbol}));
+  });
+  console.log(backtestAssets);
+
+  let counter = 0;
+  let fiatAllocation = 0;
+  let rebalancePeriod = 1;
+  let backtestSettings;
+
+  const startingTime = _.reduce(_.map(backtestAssets, 'startTime'), function(
+    latestStartTime,
+    itemStartTime,
+  ) {
+    if (latestStartTime < itemStartTime) {
+      return itemStartTime;
     }
-    return item;
+    return latestStartTime;
   });
 
-const endingTime = _.reduce(_.map(backtestAssets, 'endTime'),
-  function (latestTime, item) {
-    if (latestTime < item) {
-      return item;
+  const endingTime = _.reduce(_.map(backtestAssets, 'endTime'), function(
+    earliestEndTime,
+    itemEndTime,
+  ) {
+    if (earliestEndTime > itemEndTime) {
+      return itemEndTime;
     }
-    return item;
+    return earliestEndTime;
   });
 
-const getAllocationFromFiat = function (initialPortfolio, fiatAllocation) {
-  const [fiatPortfolio, portfolioWitoutFiat ] = _.partition(initialPortfolio, {'symbol': 'USD'});
-  const extraFiatAllocation = fiatAllocation - fiatPortfolio[0].percent;
-  const cryptoTotal = _.reduce(
-    _.map(portfolioWitoutFiat, 'percent'),
-    function(sum, assetPercent) {
+  console.log(startingTime);
+  console.log(endingTime);
+  /**
+  const getAllocationFromFiat = function(initialPortfolio, fiatAllocation) {
+    const [fiatPortfolio, portfolioWitoutFiat] = _.partition(initialPortfolio, {
+      symbol: 'USD',
+    });
+    const extraFiatAllocation = fiatAllocation - fiatPortfolio[0].percent;
+    const cryptoTotal = _.reduce(_.map(portfolioWitoutFiat, 'percent'), function(
+      sum,
+      assetPercent,
+    ) {
       return sum + assetPercent;
     });
-  console.log(cryptoTotal);
 
-  return _.map(initialPortfolio, function (item) {
-    if(item.symbol === 'USD') {
-      return {
-        symbol: item.symbol,
-        percent: fiatAllocation
+    return _.map(initialPortfolio, function(item) {
+      if (item.symbol === 'USD') {
+        return {
+          symbol: item.symbol,
+          percent: fiatAllocation,
+        };
+      } else {
+        return {
+          symbol: item.symbol,
+          percent:
+            (item.percent * (cryptoTotal / 100) * (100 - extraFiatAllocation)) /
+            100,
+        };
+      }
+    });
+  };
+
+  const newAlloc = getAllocationFromFiat(portfolio, 50);
+  console.log(newAlloc);
+  console.log(
+    _.reduce(_.map(newAlloc, 'percent'), function(sum, item) {
+      return sum + item;
+    }),
+  );
+  process.exit(1);
+
+  for (i = 0; i <= 25; i += 5) {
+    for (j = 0; j <= 45; j += 5) {
+      backtestSettings = {
+        exchange,
+        rebalancePeriod,
+        fee,
+        startingTime,
+        endingTime,
+        startingCapital,
       };
-    } else {
-      return {
-        symbol: item.symbol,
-        percent: item.percent * (cryptoTotal / 100 ) * (100 - extraFiatAllocation) / 100
-      };
+      //console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
+      console.log(backtestSettings);
+      process.exit(1);
+      counter++;
     }
-  });
-}
-
-const newAlloc = getAllocationFromFiat(portfolio, 50);
-console.log(newAlloc);
-console.log(_.reduce(_.map(newAlloc, 'percent'), function (sum, item) {
-  return sum + item;
-}));
-process.exit(1);
-
-for(i = 0; i <= 25; i+=5) {
-  for(j = 0; j <= 45; j+=5) {
-    backtestSettings = {
-      exchange,
-      rebalancePeriod,
-      fee,
-      startingTime,
-      endingTime,
-      startingCapital,
-    };
-    //console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
-    console.log(backtestSettings);
-    process.exit(1);
-    counter++;
   }
-}
 
-console.log('Total Cases: ' + counter);
+  console.log('Total Cases: ' + counter);
+  **/
+}
+init();
