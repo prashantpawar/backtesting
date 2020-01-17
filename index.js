@@ -17,6 +17,9 @@ nSQL().createDatabase({
                 "high:float": {},
                 "low:float": {},
                 "close:float": {}
+            },
+            indexes: {
+                "timestamp:date":{}
             }
         }
     ],
