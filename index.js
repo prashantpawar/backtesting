@@ -1,102 +1,35 @@
-const client = require('./client').client;
-const _ = require('lodash');
+const alasql = require('alasql');
+const ohlcDataFilename = "./Kraken_BTCUSD_1h.csv";
+const tablename = 'Kraken_BTCUSD_1H';
 
-const portfolio = [
-  {
-    symbol: 'XTZ',
-    percent: 46.50,
-  },
-  {
-    symbol: 'ETH',
-    percent: 44.30,
-  },
-  {
-    symbol: 'BTC',
-    percent: 5.03,
-  },
-  {
-    symbol: 'USD',
-    percent: 4.17,
-  },
-];
+//const timeseries = new alasql.Database("Kraken_BTCUSD_1H");
 
-const exchange = 'kraken';
-const startingCapital = 500000;
-const fee = 0.15;
-
-const backtestAssetsAll = client.getBacktestAssets(exchange);
-const backtestAssets = backtestAssetsAll.filter(function (item) {
-  return !_.isUndefined(_.find(portfolio, { 'symbol': item.symbol}));
-});
-
-let counter = 0;
-let fiatAllocation = 0;
-let rebalancePeriod = 1;
-let backtestSettings;
-
-const startingTime = _.reduce(_.map(backtestAssets, 'startTime'),
-  function (earliestTime, item) {
-    if (earliestTime > item) {
-      return item;
-    }
-    return item;
-  });
-
-const endingTime = _.reduce(_.map(backtestAssets, 'endTime'),
-  function (latestTime, item) {
-    if (latestTime < item) {
-      return item;
-    }
-    return item;
-  });
-
-const getAllocationFromFiat = function (initialPortfolio, fiatAllocation) {
-  const [fiatPortfolio, portfolioWitoutFiat ] = _.partition(initialPortfolio, {'symbol': 'USD'});
-  const extraFiatAllocation = fiatAllocation - fiatPortfolio[0].percent;
-  const cryptoTotal = _.reduce(
-    _.map(portfolioWitoutFiat, 'percent'),
-    function(sum, assetPercent) {
-      return sum + assetPercent;
-    });
-  console.log(cryptoTotal);
-
-  return _.map(initialPortfolio, function (item) {
-    if(item.symbol === 'USD') {
-      return {
-        symbol: item.symbol,
-        percent: fiatAllocation
-      };
-    } else {
-      return {
-        symbol: item.symbol,
-        percent: item.percent * (cryptoTotal / 100 ) * (100 - extraFiatAllocation) / 100
-      };
-    }
-  });
+function ETL() {
+    alasql(`ATTACH FILESTORAGE DATABASE one("./${tablename}.json");`)
+    alasql(`CREATE TABLE ${tablename} (
+        Id INT PRIMARY KEY,
+        Date_ DATE,
+        Close_ DOUBLE PRECISION
+    )`);
+    let result = alasql.promise([
+        `SELECT * INTO ${tablename} FROM CSV("${ohlcDataFilename}", {headers:true})`,
+        ])
+        .then(function (results) {
+            console.log(results);
+        }).catch(console.error);
+    return result;
 }
 
-const newAlloc = getAllocationFromFiat(portfolio, 50);
-console.log(newAlloc);
-console.log(_.reduce(_.map(newAlloc, 'percent'), function (sum, item) {
-  return sum + item;
-}));
-process.exit(1);
-
-for(i = 0; i <= 25; i+=5) {
-  for(j = 0; j <= 45; j+=5) {
-    backtestSettings = {
-      exchange,
-      rebalancePeriod,
-      fee,
-      startingTime,
-      endingTime,
-      startingCapital,
-    };
-    //console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
-    console.log(backtestSettings);
-    process.exit(1);
-    counter++;
-  }
+function READ() {
+    let result = alasql.promise([
+        `SELECT * FROM ${tablename}`
+        ])
+        .then(function (results) {
+            console.log(results);
+        })
+        .catch(console.error);
+    return result;
 }
 
-console.log('Total Cases: ' + counter);
+ETL().then(READ);
+READ();
