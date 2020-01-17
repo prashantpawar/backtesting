@@ -1,102 +1,44 @@
-const client = require('./client').client;
-const _ = require('lodash');
+const tablename = "Kraken_BTCUSD_1h";
+const nSQL = require("@nano-sql/core").nSQL;
+const fs = require('fs');
+const moment = require('moment');
 
-const portfolio = [
-  {
-    symbol: 'XTZ',
-    percent: 46.50,
-  },
-  {
-    symbol: 'ETH',
-    percent: 44.30,
-  },
-  {
-    symbol: 'BTC',
-    percent: 5.03,
-  },
-  {
-    symbol: 'USD',
-    percent: 4.17,
-  },
-];
-
-const exchange = 'kraken';
-const startingCapital = 500000;
-const fee = 0.15;
-
-const backtestAssetsAll = client.getBacktestAssets(exchange);
-const backtestAssets = backtestAssetsAll.filter(function (item) {
-  return !_.isUndefined(_.find(portfolio, { 'symbol': item.symbol}));
-});
-
-let counter = 0;
-let fiatAllocation = 0;
-let rebalancePeriod = 1;
-let backtestSettings;
-
-const startingTime = _.reduce(_.map(backtestAssets, 'startTime'),
-  function (earliestTime, item) {
-    if (earliestTime > item) {
-      return item;
-    }
-    return item;
-  });
-
-const endingTime = _.reduce(_.map(backtestAssets, 'endTime'),
-  function (latestTime, item) {
-    if (latestTime < item) {
-      return item;
-    }
-    return item;
-  });
-
-const getAllocationFromFiat = function (initialPortfolio, fiatAllocation) {
-  const [fiatPortfolio, portfolioWitoutFiat ] = _.partition(initialPortfolio, {'symbol': 'USD'});
-  const extraFiatAllocation = fiatAllocation - fiatPortfolio[0].percent;
-  const cryptoTotal = _.reduce(
-    _.map(portfolioWitoutFiat, 'percent'),
-    function(sum, assetPercent) {
-      return sum + assetPercent;
-    });
-  console.log(cryptoTotal);
-
-  return _.map(initialPortfolio, function (item) {
-    if(item.symbol === 'USD') {
-      return {
-        symbol: item.symbol,
-        percent: fiatAllocation
-      };
-    } else {
-      return {
-        symbol: item.symbol,
-        percent: item.percent * (cryptoTotal / 100 ) * (100 - extraFiatAllocation) / 100
-      };
-    }
-  });
-}
-
-const newAlloc = getAllocationFromFiat(portfolio, 50);
-console.log(newAlloc);
-console.log(_.reduce(_.map(newAlloc, 'percent'), function (sum, item) {
-  return sum + item;
-}));
-process.exit(1);
-
-for(i = 0; i <= 25; i+=5) {
-  for(j = 0; j <= 45; j+=5) {
-    backtestSettings = {
-      exchange,
-      rebalancePeriod,
-      fee,
-      startingTime,
-      endingTime,
-      startingCapital,
-    };
-    //console.log('rebalancePeriod: ' + (rebalancePeriod + i) + ' cash percent: ' + (fiatAllocation + j));
-    console.log(backtestSettings);
-    process.exit(1);
-    counter++;
-  }
-}
-
-console.log('Total Cases: ' + counter);
+const csvRaw = fs.readFileSync(`${tablename}.csv`);
+nSQL().createDatabase({
+    id: "shrimpy-backtest",
+    mode: "TEMP",
+    tables: [
+        {
+            name: tablename,
+            model: {
+                "id:int": { pk: true, ai: true },
+                "timestamp:date": {},
+                "open:float": {},
+                "high:float": {},
+                "low:float": {},
+                "close:float": {}
+            }
+        }
+    ],
+    version: 1
+}).then(() => {
+    return nSQL(tablename).loadCSV(csvRaw.toString(),
+    (row) => {
+        return {
+            'timestamp': moment(row.at, "YYYY-MM-DD HH-a"),
+            'open': row.pe,
+            'high': row.ig,
+            'low': row.o,
+            'close': row.los
+        };
+    })
+    .then(() => {
+        return "Data is in the databsase and ready";
+    })
+    .catch(console.error);
+}).then((res) => {
+    return nSQL(tablename).query("select").exec();
+}).then((res) => {
+    //ready to query
+    console.log(res);
+}).catch(console.error);
