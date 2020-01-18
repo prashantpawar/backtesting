@@ -3,6 +3,7 @@ const tablename = "Kraken_BTCUSD_1h";
 const nSQL = require("@nano-sql/core").nSQL;
 const fs = require('fs');
 const moment = require('moment');
+const numeral = require('numeral');
 
 const {processData, calculateTotalPortfolio} = require("./portfolio");
 
@@ -69,7 +70,9 @@ nSQL().createDatabase({
     .exec()
     .then((records) => {
         const lastRow = R.head(records);
-        console.log(calculateTotalPortfolio(initialPortfolio, lastRow))
-        console.log(calculateTotalPortfolio(finalPortfolio, lastRow))
+        const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, lastRow);
+        const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, lastRow);
+        console.log(numeral(originalPortfolioValue).format("$0,0.00"))
+        console.log(numeral(newPortfolioValue).format("$0,0.00"));
     });
 }).catch(console.error);
