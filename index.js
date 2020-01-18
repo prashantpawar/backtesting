@@ -1,9 +1,10 @@
+const R = require('ramda');
 const tablename = "Kraken_BTCUSD_1h";
 const nSQL = require("@nano-sql/core").nSQL;
 const fs = require('fs');
 const moment = require('moment');
 
-const {process} = require("./portfolio");
+const {processData, calculateTotalPortfolio} = require("./portfolio");
 
 const initialPortfolio = {
     BTC: 10,
@@ -27,7 +28,7 @@ nSQL().createDatabase({
                 "close:float": {}
             },
             indexes: {
-                "timestamp:date": {}
+                'timestamp:date' : {}
             }
         }
     ],
@@ -36,26 +37,39 @@ nSQL().createDatabase({
     return nSQL(tablename).loadCSV(csvRaw.toString(),
         (row) => {
             return {
-                'timestamp': moment(row.at, "YYYY-MM-DD HH-a"),
+                'timestamp': moment(row.at, "YYYY-MM-DD HH-a").toISOString(),
                 'symbol': 'BTCUSD',
                 'open': row.pe,
                 'high': row.ig,
                 'low': row.o,
                 'close': row.los
             };
+        },
+        (progress) => {
+            if (progress % 10 == 0) {
+                process.stdout.write('=');
+            }
         })
-        .then(() => "Data is in the database and ready")
+        .then(() => console.log("\nData is in the database and ready"))
         .catch(console.error);
 }).then((res) => {
     return nSQL(tablename)
     .query("select")
     .orderBy(["timestamp ASC"])
-    .limit(100)
+    // .limit(100)
     .exec()
-    //.stream(cycle(initialPortfolio), complete, console.error);
 })
-.then(process(initialPortfolio))
-.then((res) => {
+.then(processData(initialPortfolio))
+.then((finalPortfolio) => {
     //ready to query
-    console.log(res);
+    nSQL(tablename)
+    .query("select")
+    .orderBy(["timestamp ASC"])
+    .limit(1)
+    .exec()
+    .then((records) => {
+        const lastRow = R.head(records);
+        console.log(calculateTotalPortfolio(initialPortfolio, lastRow))
+        console.log(calculateTotalPortfolio(finalPortfolio, lastRow))
+    });
 }).catch(console.error);

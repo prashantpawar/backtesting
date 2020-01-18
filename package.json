@@ -17,6 +17,7 @@
     "mathjs": "^6.2.1",
     "moment": "^2.24.0",
     "momentjs": "^2.0.0",
+    "numeral": "^2.0.6",
     "ramda": "^0.26.1",
     "request": "^2.88.0",
     "shrimpy-node": "^0.2.6"

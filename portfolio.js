@@ -1,10 +1,10 @@
 const R = require('ramda');
 
-function calculateTotalPortfolio(portfolio, prices) {
-    return (portfolio['BTC'] * prices['close']) + portfolio['USD'];
-}
 module.exports = {
-    process: R.curry(function (portfolio, rows) {
+    calculateTotalPortfolio: function (portfolio, prices) {
+        return (portfolio['BTC'] * prices['close']) + portfolio['USD'];
+    },
+    processData: R.curry(function (portfolio, rows) {
         return R.reduce(function (currentPortfolio, row) {
             const btcPrice = row.close;
             const btcValue = currentPortfolio.BTC * btcPrice;
@@ -19,8 +19,10 @@ module.exports = {
                 const diff = (totalValue * 0.5) - btcValue;
                 newPortfolio.BTC = currentPortfolio.BTC + (diff / btcPrice);
                 newPortfolio.USD = currentPortfolio.USD - diff;
+           } else {
+               newPortfolio = currentPortfolio;
            }
-           console.log(row.timestamp, row.close, newPortfolio); 
+           console.log(row.id, row.timestamp, row.close, newPortfolio); 
            return newPortfolio;
         }, portfolio, rows);
     })
