@@ -6,8 +6,8 @@ const moment = require('moment');
 const {process} = require("./portfolio");
 
 const initialPortfolio = {
-    BTC: 0,
-    USD: 0
+    BTC: 10,
+    USD: 80000
 };
 
 const csvRaw = fs.readFileSync(`${tablename}.csv`);
@@ -37,7 +37,7 @@ nSQL().createDatabase({
         (row) => {
             return {
                 'timestamp': moment(row.at, "YYYY-MM-DD HH-a"),
-                'symbol': ''
+                'symbol': 'BTCUSD',
                 'open': row.pe,
                 'high': row.ig,
                 'low': row.o,
@@ -49,6 +49,8 @@ nSQL().createDatabase({
 }).then((res) => {
     return nSQL(tablename)
     .query("select")
+    .orderBy(["timestamp ASC"])
+    .limit(100)
     .exec()
     //.stream(cycle(initialPortfolio), complete, console.error);
 })
