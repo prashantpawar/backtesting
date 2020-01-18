@@ -72,7 +72,7 @@ nSQL().createDatabase({
         const lastRow = R.head(records);
         const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, lastRow);
         const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, lastRow);
-        console.log(numeral(originalPortfolioValue).format("$0,0.00"))
-        console.log(numeral(newPortfolioValue).format("$0,0.00"));
+        console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
+        console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
     });
 }).catch(console.error);
