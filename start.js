@@ -2,10 +2,6 @@ const R = require('ramda');
 const program = require('commander');
 const { ETL, run, runExaggeratedPortfolio } = require('./index');
 
-const desiredAllocation = {
-    BTC: 0.8,
-    USD: 0.2
-};
 const initialPortfolio = {
     BTC: 10,
     USD: 80000
@@ -25,15 +21,25 @@ Promise.resolve(program.opts())
     .then(function handleRealPortfolio(options) {
         const tens = R.reject(R.modulo(R.__, 10));
         return R.reduce((accu, i) => {
-            return accu.then(() => run({
+            return accu.then(() => run(options, initialPortfolio, {
                 BTC: i / 100,
                 USD: (100 - i) / 100
-            }, initialPortfolio, options));
+            }));
         },
             Promise.resolve(options),
             tens(R.range(0, 101)));
     })
     .then(function handleExaggeratedPortfolio(options) {
-        return runExaggeratedPortfolio(desiredAllocation, initialPortfolio, options);
+        const desiredRealAllocation = {
+            BTC: 0.8,
+            USD: 0.2
+        };
+        const tens = R.reject(R.modulo(R.__, 10));
+        return R.reduce((accu, i) => {
+            return accu.then(() => 
+                runExaggeratedPortfolio(options, initialPortfolio, desiredRealAllocation));
+        },
+            Promise.resolve(options),
+            tens(R.range(0, 101)));
     })
     .catch(console.error);

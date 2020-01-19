@@ -5,7 +5,7 @@ const fs = require('fs');
 const moment = require('moment');
 const numeral = require('numeral');
 
-const { processData, calculateTotalPortfolio } = require("./portfolio");
+const { processData, processExaggeratedPortfolioData, calculateTotalPortfolio } = require("./portfolio");
 
 function ETL(options) {
     if (options.load) {
@@ -77,7 +77,7 @@ const displayfinalPortfolioMetrics = R.curry((desiredAllocation, initialPortfoli
             // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
         });
 });
-const run = R.curry(function (desiredAllocation, initialPortfolio, options) {
+const run = R.curry(function (options, initialPortfolio, desiredAllocation) {
     if (options.run) {
         return fetchAllPriceData()
             .then(processData(desiredAllocation, initialPortfolio))
@@ -88,8 +88,12 @@ const run = R.curry(function (desiredAllocation, initialPortfolio, options) {
     }
 });
 
-const runExaggeratedPortfolio = R.curry(function (desiredAllocation, initialPortfolio, options) {
-    if (options.run) {
+const runExaggeratedPortfolio = R.curry(function (options, initialPortfolio, desiredAllocation) {
+    if (options.exaggeratedRun) {
+        return fetchAllPriceData()
+            .then(processExaggeratedPortfolioData(desiredAllocation, initialPortfolio))
+            .then(displayfinalPortfolioMetrics(desiredAllocation, initialPortfolio))
+            .then(() => options);
     } else {
         return Promise.resolve(options);
     }
