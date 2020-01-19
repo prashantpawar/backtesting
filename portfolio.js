@@ -4,19 +4,19 @@ module.exports = {
     calculateTotalPortfolio: function (portfolio, prices) {
         return (portfolio['BTC'] * prices['close']) + portfolio['USD'];
     },
-    processData: R.curry(function (portfolio, rows) {
+    processData: R.curry(function (desiredAllocation, portfolio, rows) {
         return R.reduce(function (currentPortfolio, row) {
             const btcPrice = row.close;
             const btcValue = currentPortfolio.BTC * btcPrice;
             const usdValue = currentPortfolio.USD;
             const totalValue = btcValue + usdValue;
             let newPortfolio = {};
-            if (btcValue / totalValue * 100 > 50) {
-                const diff = btcValue - (totalValue * 0.5);
+            if (btcValue / totalValue > desiredAllocation.BTC) {
+                const diff = btcValue - (totalValue * desiredAllocation.BTC);
                 newPortfolio.BTC = currentPortfolio.BTC - (diff / btcPrice);
                 newPortfolio.USD = currentPortfolio.USD + diff;
-           } else if (btcValue / totalValue * 100 < 50) {
-                const diff = (totalValue * 0.5) - btcValue;
+           } else if (btcValue / totalValue < desiredAllocation.BTC) {
+                const diff = (totalValue * desiredAllocation.BTC) - btcValue;
                 newPortfolio.BTC = currentPortfolio.BTC + (diff / btcPrice);
                 newPortfolio.USD = currentPortfolio.USD - diff;
            } else {

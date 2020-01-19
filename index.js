@@ -7,11 +7,6 @@ const numeral = require('numeral');
 
 const { processData, calculateTotalPortfolio } = require("./portfolio");
 
-const initialPortfolio = {
-    BTC: 10,
-    USD: 80000
-};
-
 function ETL(options) {
         if (options.load) {
             const csvRaw = fs.readFileSync(`${tablename}.csv`);
@@ -59,14 +54,14 @@ function ETL(options) {
             return Promise.resolve(options);
         }
 }
-function run(options) {
+const run = R.curry(function (desiredAllocation, initialPortfolio, options) {
     if (options.run) {
         return nSQL(tablename)
             .query("select")
             .orderBy(["timestamp ASC"])
             // .limit(100)
             .exec()
-            .then(processData(initialPortfolio))
+            .then(processData(desiredAllocation, initialPortfolio))
             .then((finalPortfolio) => {
                 //ready to query
                 nSQL(tablename)
@@ -86,7 +81,7 @@ function run(options) {
     } else {
         return Promise.resolve(options);
     }
-}
+});
 
 module.exports = {
     ETL: ETL,
