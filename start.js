@@ -2,12 +2,10 @@ const R = require('ramda');
 const program = require('commander');
 const { ETL, run } = require('./index');
 
-/**
 const desiredAllocation = {
-    BTC: 0.8,
-    USD: 0.2
+    BTC: 0.5,
+    USD: 0.5
 };
-**/
 const initialPortfolio = {
     BTC: 10,
     USD: 80000

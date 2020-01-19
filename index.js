@@ -73,8 +73,9 @@ const run = R.curry(function (desiredAllocation, initialPortfolio, options) {
                         const lastRow = R.head(records);
                         const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, lastRow);
                         const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, lastRow);
-                        console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
-                        console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
+                        console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue)/originalPortfolioValue).format("0.00%"), desiredAllocation);
+                        // console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
+                        // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
                     });
             })
             .then(() => options);

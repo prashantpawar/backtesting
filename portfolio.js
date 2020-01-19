@@ -22,8 +22,10 @@ module.exports = {
            } else {
                newPortfolio = currentPortfolio;
            }
-        //    console.log(row.id,row.timestamp, row.close, newPortfolio); 
            return newPortfolio;
         }, portfolio, rows);
+    }),
+    processFakePortfolioData: R.curry(function(desiredAllocation, ) {
+
     })
 };
