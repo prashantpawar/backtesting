@@ -25,7 +25,7 @@ module.exports = {
            return newPortfolio;
         }, portfolio, rows);
     }),
-    processFakePortfolioData: R.curry(function(desiredAllocation, ) {
-
+    processExaggeratedPortfolioData: R.curry(function(desiredAllocation, ) {
+        
     })
 };
