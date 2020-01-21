@@ -2,11 +2,6 @@ const R = require('ramda');
 const program = require('commander');
 const { ETL, run, runExaggeratedPortfolio } = require('./index');
 
-const initialPortfolio = {
-    BTC: 10,
-    USD: 80000
-};
-
 program
     .option('-d, --debug', 'output extra debugging')
     .option('-l, --load', 'load the data')
@@ -19,6 +14,11 @@ if (program.debug) console.log(program.opts());
 Promise.resolve(program.opts())
     .then(ETL)
     .then(function handleRealPortfolio(options) {
+        const initialPortfolio = {
+            BTC: 17,
+            USD: 80000
+        };
+
         const tens = R.reject(R.modulo(R.__, 10));
         return R.reduce((accu, i) => {
             return accu.then(() => run(options, initialPortfolio, {
@@ -30,16 +30,34 @@ Promise.resolve(program.opts())
             tens(R.range(0, 101)));
     })
     .then(function handleExaggeratedPortfolio(options) {
-        const desiredRealAllocation = {
-            BTC: 0.8,
-            USD: 0.2
+        const initialPortfolio = {
+            BTC: 17,
+            USD: {
+                real: 80000,
+                fake: 120000
+            }
         };
+        return runExaggeratedPortfolio(options, initialPortfolio, {
+            BTC: 0.5,
+            USD: {
+                real: 0.2,
+                fake: 0.3
+            }
+        });
+        /**
         const tens = R.reject(R.modulo(R.__, 10));
         return R.reduce((accu, i) => {
-            return accu.then(() => 
-                runExaggeratedPortfolio(options, initialPortfolio, desiredRealAllocation));
+            return accu.then(() =>
+                runExaggeratedPortfolio(options, initialPortfolio, {
+                    BTC: 0.5,
+                    USD: {
+                        fake: 0.5 - (i/100),
+                        real: i / 100
+                    }
+                }));
         },
             Promise.resolve(options),
-            tens(R.range(0, 101)));
+            tens(R.range(0, 51)));
+            */
     })
     .catch(console.error);

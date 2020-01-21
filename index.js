@@ -61,7 +61,7 @@ const fetchAllPriceData = () => {
         // .limit(100)
         .exec();
 }
-const displayfinalPortfolioMetrics = R.curry((desiredAllocation, initialPortfolio, finalPortfolio) => {
+const getfinalBTCValue = (finalPortfolio) => {
     //ready to query
     return nSQL(tablename)
         .query("select")
@@ -69,19 +69,21 @@ const displayfinalPortfolioMetrics = R.curry((desiredAllocation, initialPortfoli
         .limit(1)
         .exec()
         .then((records) => {
-            const lastRow = R.head(records);
-            const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, lastRow);
-            const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, lastRow);
-            console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation);
-            // console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
-            // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
+            return [R.head(records), finalPortfolio];
         });
-});
+};
 const run = R.curry(function (options, initialPortfolio, desiredAllocation) {
     if (options.run) {
         return fetchAllPriceData()
             .then(processData(desiredAllocation, initialPortfolio))
-            .then(displayfinalPortfolioMetrics(desiredAllocation, initialPortfolio))
+            .then(getfinalBTCValue)
+            .then(([btcPrice, finalPortfolio]) => {
+                const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
+                const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
+                console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation);
+                // console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
+                // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
+            })
             .then(() => options);
     } else {
         return Promise.resolve(options);
@@ -92,7 +94,14 @@ const runExaggeratedPortfolio = R.curry(function (options, initialPortfolio, des
     if (options.exaggeratedRun) {
         return fetchAllPriceData()
             .then(processExaggeratedPortfolioData(desiredAllocation, initialPortfolio))
-            .then(displayfinalPortfolioMetrics(desiredAllocation, initialPortfolio))
+            .then(getfinalBTCValue)
+            .then(([btcPrice, finalPortfolio]) => {
+                const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
+                const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
+                console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation);
+                console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
+                console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
+            })
             .then(() => options);
     } else {
         return Promise.resolve(options);
