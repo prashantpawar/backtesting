@@ -6,6 +6,7 @@ const moment = require('moment');
 const numeral = require('numeral');
 
 const { processData, processExaggeratedPortfolioData, calculateTotalPortfolio } = require("./portfolio");
+const { authenticate, writeTable} = require('./google-docs');
 
 function ETL(options) {
     if (options.load) {
@@ -96,6 +97,7 @@ const runExaggeratedPortfolio = R.curry(function (options, initialPortfolio, des
             .then(processExaggeratedPortfolioData(desiredAllocation, initialPortfolio))
             .then(getfinalBTCValue)
             .then(([btcPrice, finalPortfolio]) => {
+                authenticate().then(writeTable);
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
                 console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation);

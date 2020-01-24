@@ -2,6 +2,11 @@ const R = require('ramda');
 const program = require('commander');
 const { ETL, run, runExaggeratedPortfolio } = require('./index');
 
+//REMOVE ME
+const { authenticate, writeTable} = require('./google-docs');
+authenticate().then(writeTable);
+return;
+
 program
     .option('-d, --debug', 'output extra debugging')
     .option('-l, --load', 'load the data')
