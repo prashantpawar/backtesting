@@ -3,9 +3,18 @@ const program = require('commander');
 const { ETL, run, runExaggeratedPortfolio } = require('./index');
 
 //REMOVE ME
+/**
+let values = [
+    ['Name', 'Age'],
+    ['Prashant', 'CS']
+];
 const { authenticate, writeTable} = require('./google-docs');
-authenticate().then(writeTable);
+authenticate()
+.then(writeTable('1Ms45f7L3ZUDjBFMkznOBRVCorvORNly1ZXH3NK9oYD4', 'A1:B2', values))
+.then(console.log)
+.catch(console.error);
 return;
+*/
 
 program
     .option('-d, --debug', 'output extra debugging')
