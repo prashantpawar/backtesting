@@ -6,9 +6,9 @@ const moment = require('moment');
 const numeral = require('numeral');
 
 const { processData, processExaggeratedPortfolioData, calculateTotalPortfolio } = require("./portfolio");
-const { authenticate, writeTable} = require('./google-docs');
+const { authenticate, writeTable } = require('./google-docs');
 
-function ETL(options) {
+function ETL({ options, output }) {
     if (options.load) {
         const csvRaw = fs.readFileSync(`${tablename}.csv`);
         return nSQL().createDatabase({
@@ -45,14 +45,15 @@ function ETL(options) {
                     };
                 },
                 (progress) => {
-                    if (progress % 10 == 0) {
+                    if (progress % 10 === 0) {
                         process.stdout.write('=');
                     }
                 })
-                .then(() => console.log("\nData is in the database and ready"));
-        }).then(() => options);
+                .then(_ => console.log())
+                .then(() => R.append("Data is in the database and ready", output));
+        }).then((output) => { return { options, output }; });
     } else {
-        return Promise.resolve(options);
+        return Promise.resolve({ options, output });
     }
 }
 const fetchAllPriceData = () => {
@@ -69,11 +70,9 @@ const getfinalBTCValue = (finalPortfolio) => {
         .orderBy(["timestamp ASC"])
         .limit(1)
         .exec()
-        .then((records) => {
-            return [R.head(records), finalPortfolio];
-        });
+        .then((records) => [R.head(records), finalPortfolio]);
 };
-const run = R.curry(function (options, initialPortfolio, desiredAllocation) {
+const run = R.curry(function ({ options, output }, initialPortfolio, desiredAllocation) {
     if (options.run) {
         return fetchAllPriceData()
             .then(processData(desiredAllocation, initialPortfolio))
@@ -81,17 +80,17 @@ const run = R.curry(function (options, initialPortfolio, desiredAllocation) {
             .then(([btcPrice, finalPortfolio]) => {
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
-                console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation);
+                return R.append("Performance: " + numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%") + desiredAllocation, output);
                 // console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
                 // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
             })
-            .then(() => options);
+            .then((output_) => ({ options, output: output_ }));
     } else {
-        return Promise.resolve(options);
+        return Promise.resolve({ options, output });
     }
 });
 
-const runExaggeratedPortfolio = R.curry(function (options, initialPortfolio, desiredAllocation) {
+const runExaggeratedPortfolio = R.curry(function ({ options, output }, initialPortfolio, desiredAllocation) {
     if (options.exaggeratedRun) {
         return fetchAllPriceData()
             .then(processExaggeratedPortfolioData(desiredAllocation, initialPortfolio))
@@ -100,11 +99,14 @@ const runExaggeratedPortfolio = R.curry(function (options, initialPortfolio, des
                 authenticate().then(writeTable);
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
-                console.log("Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation);
-                console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
-                console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
+                R.append(
+                    "Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation,
+                    R.append(
+                        "Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"),
+                        R.append(
+                            "Ending Value:", numeral(newPortfolioValue).format("$0,0.00"), output)));
             })
-            .then(() => options);
+            .then(() => ({ options, output: ouput.push("Helloi world") }));
     } else {
         return Promise.resolve(options);
     }

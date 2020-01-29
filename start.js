@@ -25,9 +25,10 @@ program
 program.parse(process.argv);
 
 if (program.debug) console.log(program.opts());
-Promise.resolve(program.opts())
+Promise.resolve({ options: program.opts(), output: [] })
     .then(ETL)
-    .then(function handleRealPortfolio(options) {
+    .then(function handleRealPortfolio({ options, output }) {
+        console.log("handleRealPortfolio ", output);
         const initialPortfolio = {
             BTC: 17,
             USD: 80000
@@ -35,15 +36,16 @@ Promise.resolve(program.opts())
 
         const tens = R.reject(R.modulo(R.__, 10));
         return R.reduce((accu, i) => {
-            return accu.then(() => run(options, initialPortfolio, {
+            return accu.then(({ _, output_ }) => run({ options, output: output_ }, initialPortfolio, {
                 BTC: i / 100,
                 USD: (100 - i) / 100
             }));
         },
-            Promise.resolve(options),
+            Promise.resolve({ options, output }),
             tens(R.range(0, 101)));
     })
-    .then(function handleExaggeratedPortfolio(options) {
+    .then(function handleExaggeratedPortfolio({ options, output }) {
+        console.log("handleExaggeratedPortfolio ", output);
         const initialPortfolio = {
             BTC: 17,
             USD: {
@@ -51,7 +53,7 @@ Promise.resolve(program.opts())
                 fake: 120000
             }
         };
-        return runExaggeratedPortfolio(options, initialPortfolio, {
+        return runExaggeratedPortfolio({ options, output }, initialPortfolio, {
             BTC: 0.5,
             USD: {
                 real: 0.2,
@@ -74,4 +76,5 @@ Promise.resolve(program.opts())
             tens(R.range(0, 51)));
             */
     })
+    .then(({ _, output }) => console.log(output))
     .catch(console.error);
