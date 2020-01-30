@@ -2,6 +2,8 @@ const R = require('ramda');
 const program = require('commander');
 const { ETL, run, runExaggeratedPortfolio } = require('./index');
 
+const { authenticateGDocs, writeTable } = require('./google-docs');
+
 //REMOVE ME
 /**
 let values = [
@@ -25,10 +27,10 @@ program
 program.parse(process.argv);
 
 if (program.debug) console.log(program.opts());
-Promise.resolve({ options: program.opts(), output: [] })
+authenticateGDocs()
+    .then(_ => ({ options: program.opts(), output: [] }))
     .then(ETL)
     .then(function handleRealPortfolio({ options, output }) {
-        console.log("handleRealPortfolio ", output);
         const initialPortfolio = {
             BTC: 17,
             USD: 80000
@@ -36,7 +38,7 @@ Promise.resolve({ options: program.opts(), output: [] })
 
         const tens = R.reject(R.modulo(R.__, 10));
         return R.reduce((accu, i) => {
-            return accu.then(({ _, output_ }) => run({ options, output: output_ }, initialPortfolio, {
+            return accu.then((args) => run(args, initialPortfolio, {
                 BTC: i / 100,
                 USD: (100 - i) / 100
             }));
@@ -44,8 +46,9 @@ Promise.resolve({ options: program.opts(), output: [] })
             Promise.resolve({ options, output }),
             tens(R.range(0, 101)));
     })
+    .then()
+    .then(o => { console.log("after handleRealPortfolio", o.output); return o;})
     .then(function handleExaggeratedPortfolio({ options, output }) {
-        console.log("handleExaggeratedPortfolio ", output);
         const initialPortfolio = {
             BTC: 17,
             USD: {
@@ -76,5 +79,5 @@ Promise.resolve({ options: program.opts(), output: [] })
             tens(R.range(0, 51)));
             */
     })
-    .then(({ _, output }) => console.log(output))
+    .then(o => { console.log("after handleExaggeratedPortfolio", o.output); return o;})
     .catch(console.error);

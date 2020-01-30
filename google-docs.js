@@ -10,7 +10,7 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // time.
 const TOKEN_PATH = 'token.json';
 
-function authenticate() {
+function authenticateGDocs() {
   const returnPromise = new Promise((resolve, reject) => {
     // Load client secrets from a local file.
     fs.readFile('credentials.json', (err, content) => {
@@ -126,6 +126,6 @@ function writeTable(spreadsheetId, range, tableData, auth) {
 }
 
 module.exports = {
-  authenticate: R.curry(authenticate),
+  authenticateGDocs: R.curry(authenticateGDocs),
   writeTable: R.curry(writeTable)
 }

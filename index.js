@@ -6,7 +6,7 @@ const moment = require('moment');
 const numeral = require('numeral');
 
 const { processData, processExaggeratedPortfolioData, calculateTotalPortfolio } = require("./portfolio");
-const { authenticate, writeTable } = require('./google-docs');
+const { authenticateGDocs, writeTable } = require('./google-docs');
 
 function ETL({ options, output }) {
     if (options.load) {
@@ -51,7 +51,7 @@ function ETL({ options, output }) {
                 })
                 .then(_ => console.log())
                 .then(() => R.append("Data is in the database and ready", output));
-        }).then((output) => { return { options, output }; });
+        }).then((output_) => ({ options, output: output_ }));
     } else {
         return Promise.resolve({ options, output });
     }
@@ -80,7 +80,7 @@ const run = R.curry(function ({ options, output }, initialPortfolio, desiredAllo
             .then(([btcPrice, finalPortfolio]) => {
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
-                return R.append("Performance: " + numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%") + desiredAllocation, output);
+                return R.append(`Performance: ${numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%")} ${JSON.stringify(desiredAllocation)}`, output);
                 // console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
                 // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
             })
@@ -99,16 +99,16 @@ const runExaggeratedPortfolio = R.curry(function ({ options, output }, initialPo
                 authenticate().then(writeTable);
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
-                R.append(
-                    "Performance: ", numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), desiredAllocation,
+                return R.append(
+                    `Performance: ${numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%")} ${JSON.stringify(desiredAllocation)}`,
                     R.append(
-                        "Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"),
+                        `Starting Value: ${numeral(originalPortfolioValue).format("$0,0.00")}`,
                         R.append(
-                            "Ending Value:", numeral(newPortfolioValue).format("$0,0.00"), output)));
+                            `Ending Value: ${numeral(newPortfolioValue).format("$0,0.00")}`, output)));
             })
-            .then(() => ({ options, output: ouput.push("Helloi world") }));
+            .then((output_) => ({ options, output: output_ }));
     } else {
-        return Promise.resolve(options);
+        return Promise.resolve({options, output});
     }
 });
 
