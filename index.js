@@ -50,7 +50,7 @@ function ETL({ options, output }) {
                     }
                 })
                 .then(_ => console.log())
-                .then(() => R.append("Data is in the database and ready", output));
+                .then(() => output);
         }).then((output_) => ({ options, output: output_ }));
     } else {
         return Promise.resolve({ options, output });
@@ -80,9 +80,12 @@ const run = R.curry(function ({ options, output }, initialPortfolio, desiredAllo
             .then(([btcPrice, finalPortfolio]) => {
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
-                return R.append(`Performance: ${numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%")} ${JSON.stringify(desiredAllocation)}`, output);
-                // console.log("Starting Value:", numeral(originalPortfolioValue).format("$0,0.00"))
-                // console.log("Ending Value:", numeral(newPortfolioValue).format("$0,0.00"));
+                return R.append(({
+                    performance: numeral((newPortfolioValue - originalPortfolioValue) / originalPortfolioValue).format("0.00%"), 
+                    startValue: numeral(originalPortfolioValue).format("$0,0.00"),
+                    endingValue: numeral(newPortfolioValue).format("$0,0.00"),
+                    portfolio: desiredAllocation
+                }), output);
             })
             .then((output_) => ({ options, output: output_ }));
     } else {
@@ -96,7 +99,6 @@ const runExaggeratedPortfolio = R.curry(function ({ options, output }, initialPo
             .then(processExaggeratedPortfolioData(desiredAllocation, initialPortfolio))
             .then(getfinalBTCValue)
             .then(([btcPrice, finalPortfolio]) => {
-                authenticate().then(writeTable);
                 const originalPortfolioValue = calculateTotalPortfolio(initialPortfolio, btcPrice);
                 const newPortfolioValue = calculateTotalPortfolio(finalPortfolio, btcPrice);
                 return R.append(

@@ -1,22 +1,9 @@
 const R = require('ramda');
 const program = require('commander');
 const { ETL, run, runExaggeratedPortfolio } = require('./index');
+const { flattenObj } = require('./util');
 
 const { authenticateGDocs, writeTable } = require('./google-docs');
-
-//REMOVE ME
-/**
-let values = [
-    ['Name', 'Age'],
-    ['Prashant', 'CS']
-];
-const { authenticate, writeTable} = require('./google-docs');
-authenticate()
-.then(writeTable('1Ms45f7L3ZUDjBFMkznOBRVCorvORNly1ZXH3NK9oYD4', 'A1:B2', values))
-.then(console.log)
-.catch(console.error);
-return;
-*/
 
 program
     .option('-d, --debug', 'output extra debugging')
@@ -28,7 +15,7 @@ program.parse(process.argv);
 
 if (program.debug) console.log(program.opts());
 authenticateGDocs()
-    .then(_ => ({ options: program.opts(), output: [] }))
+    .then(oauth => ({ options: R.merge(program.opts(), {oauth: oauth}), output: [] }))
     .then(ETL)
     .then(function handleRealPortfolio({ options, output }) {
         const initialPortfolio = {
@@ -46,8 +33,14 @@ authenticateGDocs()
             Promise.resolve({ options, output }),
             tens(R.range(0, 101)));
     })
-    .then()
-    .then(o => { console.log("after handleRealPortfolio", o.output); return o;})
+    .then(({options, output}) => {
+        const parsedOutput = R.mapObjIndexed(flattenObj, output);
+        const headers = R.keys(R.head(parsedOutput));
+        const parsed = R.toPairs(R.mapObjIndexed(R.props(headers), parsedOutput));
+        const formatted = R.prepend(headers, R.unnest(R.map(R.tail, parsed)));
+        return writeTable('1Ms45f7L3ZUDjBFMkznOBRVCorvORNly1ZXH3NK9oYD4', 'Sheet1', formatted, options.oauth)
+        .then(_ => ({options, output}));
+    })
     .then(function handleExaggeratedPortfolio({ options, output }) {
         const initialPortfolio = {
             BTC: 17,
@@ -79,5 +72,5 @@ authenticateGDocs()
             tens(R.range(0, 51)));
             */
     })
-    .then(o => { console.log("after handleExaggeratedPortfolio", o.output); return o;})
+    // .then(o => { console.log("after handleExaggeratedPortfolio", o.output); return o;})
     .catch(console.error);
