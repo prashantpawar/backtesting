@@ -15,7 +15,7 @@
     "googleapis": "^39.2.0",
     "lodash": "^4.17.19",
     "lodash-fp": "^0.10.4",
-    "mathjs": "^6.2.1",
+    "mathjs": "^7.5.1",
     "moment": "^2.24.0",
     "momentjs": "^2.0.0",
     "numeral": "^2.0.6",
